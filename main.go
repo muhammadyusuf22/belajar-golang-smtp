@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/smtp"
-	"strings"
+
+	"gopkg.in/gomail.v2"
 )
 
 const (
@@ -16,33 +15,25 @@ const (
 )
 
 func main() {
-	to := []string{"muh.iyus@gmail.com", "yusuf@tabeldata.com"} // email tujuan
-	cc := []string{"muhammad.yusuf@protechbit.com"}             // email cc
-	subject := "Test Golang Email"
-	message := "Hello, From Golang App Send Email"
+	mailer := gomail.NewMessage()
+	mailer.SetHeader("From", CONFIG_SENDER_NAME)
+	mailer.SetHeader("To", "muh.iyus@gmail.com", "yusuf@tabeldata.com")                     // email tujuan
+	mailer.SetAddressHeader("Cc", "muhammad.yusuf@protechbit.com", "Protechbit Mail Yusuf") // email cc
+	mailer.SetHeader("Subject", "Test Golang Email")
+	mailer.SetBody("text/html", "Hello, <b>From Golang App Send Email</b>")
+	mailer.Attach("./banner.png")
 
-	err := sendMail(to, cc, subject, message)
+	dialer := gomail.NewDialer(
+		CONFIG_SMTP_HOST,
+		CONFIG_SMTP_PORT,
+		CONFIG_AUTH_EMAIL,
+		CONFIG_AUTH_PASSWORD,
+	)
+
+	err := dialer.DialAndSend(mailer)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	log.Println("Mail sent!")
-}
-
-func sendMail(to []string, cc []string, subject, message string) error {
-	body := "From: " + CONFIG_SENDER_NAME + "\n" +
-		"To: " + strings.Join(to, ",") + "\n" +
-		"Cc: " + strings.Join(cc, ",") + "\n" +
-		"Subject: " + subject + "\n\n" +
-		message
-
-	auth := smtp.PlainAuth("", CONFIG_AUTH_EMAIL, CONFIG_AUTH_PASSWORD, CONFIG_SMTP_HOST)
-	smtpAddr := fmt.Sprintf("%s:%d", CONFIG_SMTP_HOST, CONFIG_SMTP_PORT)
-
-	err := smtp.SendMail(smtpAddr, auth, CONFIG_AUTH_EMAIL, append(to, cc...), []byte(body))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
